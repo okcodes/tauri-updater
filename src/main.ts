@@ -1,36 +1,71 @@
 import * as core from '@actions/core'
+import { assembleSemiUpdater } from './lib/tauri-utils/tauri-semi-updater-assembler'
+import { listGithubReleaseAssets } from './lib/github-utils/list-github-release-assets'
+import { getRequiredEnvVars } from './lib/github-utils/github-env-vars'
+import { assembleUpdaterFromSemi } from './lib/tauri-utils/tauri-updater-assembler-github'
+import { uploadTextAsAsset } from './lib/github-utils/github-upload'
+import path from 'path'
 import { VERSION } from './version'
-import { runAssembleUpdaterCommand } from './commands/assemble-updater-command'
-import { runBuildAppCommand } from './commands/build-app-command'
 
-export type MainActionInputs = 'command'
-type Command = 'build-app' | 'assemble-updater'
-export const BUILD_APP_COMMAND = 'build-app'
-export const ASSEMBLE_UPDATER_COMMAND = 'assemble-updater'
+export type ActionInputs = 'releaseId' | 'appVersion' | 'preferUniversal' | 'preferNsis' | 'pubDate' | 'updaterName'
 
-const input = (name: MainActionInputs, options: core.InputOptions): string => core.getInput(name, options)
-const VALID_COMMANDS: Command[] = [BUILD_APP_COMMAND, ASSEMBLE_UPDATER_COMMAND]
+const input = (name: ActionInputs, options: core.InputOptions): string => core.getInput(name, options)
+const booleanInput = (name: ActionInputs, options: core.InputOptions): boolean => core.getBooleanInput(name, options)
 
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 export async function run(): Promise<void> {
-  console.log(`Running tauri-release-action v${VERSION}`)
+  console.log(`Running okcodes/tauri-updater v${VERSION}`)
 
-  // Get command
-  const command = input('command', { required: true, trimWhitespace: true }) as Command
-  if (!VALID_COMMANDS.some(_ => _ === command)) {
-    core.setFailed(`The input "command" must be set to either "${BUILD_APP_COMMAND}" or "${ASSEMBLE_UPDATER_COMMAND}"`)
-    return
-  }
+  try {
+    console.log('Running Assemble Updater Command')
+    const { GITHUB_TOKEN, GITHUB_REPOSITORY } = getRequiredEnvVars()
 
-  switch (command) {
-    case BUILD_APP_COMMAND:
-      await runBuildAppCommand()
-      break
-    case ASSEMBLE_UPDATER_COMMAND:
-      await runAssembleUpdaterCommand()
-      break
+    if (!GITHUB_TOKEN) {
+      core.setFailed('GITHUB_TOKEN is required')
+      return
+    }
+
+    if (!GITHUB_REPOSITORY) {
+      core.setFailed('GITHUB_REPOSITORY is required')
+      return
+    }
+
+    const [owner, repo] = GITHUB_REPOSITORY.split('/')
+
+    if (!owner || !repo) {
+      core.setFailed('GITHUB_REPOSITORY must be called with the format owner/repo')
+      return
+    }
+
+    const releaseId = +input('releaseId', { required: true, trimWhitespace: true })
+    const appVersion = input('appVersion', { required: true, trimWhitespace: true })
+    const preferUniversal = booleanInput('preferUniversal', { required: true, trimWhitespace: true })
+    const preferNsis = booleanInput('preferNsis', { required: true, trimWhitespace: true })
+    const pubDate = input('pubDate', { required: true, trimWhitespace: true })
+    const updaterName = path.basename(input('updaterName', { required: true, trimWhitespace: true }))
+
+    // Validate release ID
+    if (isNaN(releaseId)) {
+      core.setFailed('The input "releaseId" must be a number.')
+      return
+    }
+
+    if (!updaterName.endsWith('.json') || !path.basename(updaterName, '.json')) {
+      core.setFailed('The input "updaterName" must be a valid file name with the .json extension.')
+      return
+    }
+
+    const assets = await listGithubReleaseAssets({ githubToken: GITHUB_TOKEN, repo, owner, releaseId })
+    const semiUpdater = assembleSemiUpdater({ appVersion, pubDate, assets, preferUniversal, preferNsis })
+    const updater = await assembleUpdaterFromSemi({ semiUpdater, githubToken: GITHUB_TOKEN })
+    await uploadTextAsAsset({ name: updaterName, text: JSON.stringify(updater), releaseId, owner, repo, githubToken: GITHUB_TOKEN })
+    console.log('Semi updater assembled, will assemble final updater', { semiUpdater, updater })
+  } catch (error) {
+    // Fail the workflow run if an error occurs
+    console.error('Error assembling updater', error)
+    core.setFailed((error as Error).message)
   }
 }
