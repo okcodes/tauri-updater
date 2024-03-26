@@ -100,7 +100,15 @@ const getUpdaterAssetForSignatureAsset = ({ signatureAsset, assets }: { signatur
   return assets.find(asset => asset.name === updaterAssetName)
 }
 
-export const assembleSemiUpdater = ({ appVersion, pubDate, assets, preferUniversal, preferNsis }: { appVersion: string; pubDate: string; assets: GithubAsset[]; preferUniversal: boolean; preferNsis: boolean }): TauriSemiUpdater => {
+export type AssembleSemiUpdaterParams = {
+  appVersion: string
+  pubDate: string
+  assets: GithubAsset[]
+  preferUniversal: boolean
+  preferNsis: boolean
+}
+
+export const assembleSemiUpdater = ({ appVersion, pubDate, assets, preferUniversal, preferNsis }: AssembleSemiUpdaterParams): TauriSemiUpdater => {
   const updater: TauriSemiUpdater = {
     version: appVersion,
     notes: `Version ${appVersion} brings enhancements and bug fixes for improved performance and stability.`,

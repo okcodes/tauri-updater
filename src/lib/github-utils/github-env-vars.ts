@@ -5,7 +5,7 @@ import * as process from 'process'
  *
  * More info: https://docs.github.com/en/actions/learn-github-actions/variables
  */
-export type GithubRequiredEnvVars = 'GITHUB_TOKEN' | 'GITHUB_REPOSITORY' | 'GITHUB_SHA'
+export type GithubRequiredEnvVars = 'GITHUB_TOKEN' | 'GITHUB_REPOSITORY'
 
 /**
  * Returns an object with all the required env vars for the action to run.
@@ -16,7 +16,6 @@ export const getRequiredEnvVars = (): Record<GithubRequiredEnvVars, string> => {
   return {
     GITHUB_TOKEN: process.env.GITHUB_TOKEN || '',
     GITHUB_REPOSITORY: process.env.GITHUB_REPOSITORY || '',
-    GITHUB_SHA: process.env.GITHUB_SHA || '',
   }
 }
 

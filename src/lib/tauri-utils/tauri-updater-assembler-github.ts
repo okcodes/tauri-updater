@@ -22,7 +22,12 @@ export type TauriUpdater = {
   >
 }
 
-export const assembleUpdaterFromSemi = async ({ semiUpdater, githubToken }: { semiUpdater: TauriSemiUpdater; githubToken: string }): Promise<TauriUpdater> => {
+export type AssembleUpdaterFromSemiParams = {
+  semiUpdater: TauriSemiUpdater
+  githubToken: string
+}
+
+export const assembleUpdaterFromSemi = async ({ semiUpdater, githubToken }: AssembleUpdaterFromSemiParams): Promise<TauriUpdater> => {
   const updater: TauriUpdater = {
     version: semiUpdater.version,
     platforms: {},

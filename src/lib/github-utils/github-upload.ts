@@ -1,6 +1,6 @@
 import { Octokit } from '@octokit/rest'
 
-type UploadTextParams = {
+export type UploadTextParams = {
   releaseId: number
   owner: string
   repo: string
