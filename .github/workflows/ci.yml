@@ -95,7 +95,7 @@ jobs:
           path: 'micro-demo'
           ref: 'main'
 
-      - uses: okcodes/tauri-build
+      - uses: okcodes/tauri-build@main
         id: tauri
         with:
           tauriContext: ${{ github.workspace }}/micro-demo/
