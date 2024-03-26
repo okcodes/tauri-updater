@@ -1,26 +1,71 @@
 import * as core from '@actions/core'
-import { wait } from './wait'
+import { assembleSemiUpdater } from './lib/tauri-utils/tauri-semi-updater-assembler'
+import { listGithubReleaseAssets } from './lib/github-utils/list-github-release-assets'
+import { getRequiredEnvVars } from './lib/github-utils/github-env-vars'
+import { assembleUpdaterFromSemi } from './lib/tauri-utils/tauri-updater-assembler-github'
+import { uploadTextAsAsset } from './lib/github-utils/github-upload'
+import path from 'path'
+import { VERSION } from './version'
+
+export type ActionInputs = 'releaseId' | 'appVersion' | 'preferUniversal' | 'preferNsis' | 'pubDate' | 'updaterName'
+
+const input = (name: ActionInputs, options: core.InputOptions): string => core.getInput(name, options)
+const booleanInput = (name: ActionInputs, options: core.InputOptions): boolean => core.getBooleanInput(name, options)
 
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 export async function run(): Promise<void> {
+  console.log(`Running okcodes/tauri-updater v${VERSION}`)
+
   try {
-    const ms: string = core.getInput('milliseconds')
+    console.log('Running Assemble Updater Command')
+    const { GITHUB_TOKEN, GITHUB_REPOSITORY } = getRequiredEnvVars()
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    if (!GITHUB_TOKEN) {
+      core.setFailed('GITHUB_TOKEN is required')
+      return
+    }
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    if (!GITHUB_REPOSITORY) {
+      core.setFailed('GITHUB_REPOSITORY is required')
+      return
+    }
 
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    const [owner, repo] = GITHUB_REPOSITORY.split('/')
+
+    if (!owner || !repo) {
+      core.setFailed('GITHUB_REPOSITORY must be called with the format owner/repo')
+      return
+    }
+
+    const releaseId = +input('releaseId', { required: true, trimWhitespace: true })
+    const appVersion = input('appVersion', { required: true, trimWhitespace: true })
+    const preferUniversal = booleanInput('preferUniversal', { required: true, trimWhitespace: true })
+    const preferNsis = booleanInput('preferNsis', { required: true, trimWhitespace: true })
+    const pubDate = input('pubDate', { required: true, trimWhitespace: true })
+    const updaterName = path.basename(input('updaterName', { required: true, trimWhitespace: true }))
+
+    // Validate release ID
+    if (isNaN(releaseId)) {
+      core.setFailed('The input "releaseId" must be a number.')
+      return
+    }
+
+    if (!updaterName.endsWith('.json') || !path.basename(updaterName, '.json')) {
+      core.setFailed('The input "updaterName" must be a valid file name with the .json extension.')
+      return
+    }
+
+    const assets = await listGithubReleaseAssets({ githubToken: GITHUB_TOKEN, repo, owner, releaseId })
+    const semiUpdater = assembleSemiUpdater({ appVersion, pubDate, assets, preferUniversal, preferNsis })
+    const updater = await assembleUpdaterFromSemi({ semiUpdater, githubToken: GITHUB_TOKEN })
+    await uploadTextAsAsset({ name: updaterName, text: JSON.stringify(updater), releaseId, owner, repo, githubToken: GITHUB_TOKEN })
+    console.log('Semi updater assembled, will assemble final updater', { semiUpdater, updater })
   } catch (error) {
     // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message)
+    console.error('Error assembling updater', error)
+    core.setFailed((error as Error).message)
   }
 }
