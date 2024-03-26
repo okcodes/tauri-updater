@@ -1,4 +1,4 @@
-type GithubAsset = {
+export type GithubAsset = {
   name: string
   url: string
 }

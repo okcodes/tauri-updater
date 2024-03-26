@@ -1,4 +1,5 @@
 import { assembleSemiUpdater, TauriSemiUpdater } from './tauri-semi-updater-assembler'
+import { type GithubAsset } from '../github-utils/github-asset'
 
 const allAssets: GithubAsset[] = [
   // macOS Silicon (darwin-aarch64)

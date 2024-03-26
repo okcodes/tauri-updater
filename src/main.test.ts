@@ -18,6 +18,7 @@ import * as githubUploadModule from './lib/github-utils/github-upload'
 import { AssembleSemiUpdaterParams } from './lib/tauri-utils/tauri-semi-updater-assembler'
 import { AssembleUpdaterFromSemiParams, TauriUpdater } from './lib/tauri-utils/tauri-updater-assembler-github'
 import { UploadTextParams } from './lib/github-utils/github-upload'
+import { type GithubAsset } from './lib/github-utils/github-asset'
 
 // Mocked functions
 let errorMock: jest.SpiedFunction<typeof core.error>
@@ -102,7 +103,10 @@ describe('run', () => {
     {
       inputs: { releaseId: '123', appVersion: '0.0.0', preferUniversal: false, preferNsis: false, pubDate: '2020-06-22T19:25:57Z', updaterName: 'my-test-updater.json' },
     },
-  ])('', async ({ inputs }) => {
+    {
+      inputs: { releaseId: '123', appVersion: '0.0.0', preferUniversal: true, preferNsis: true, pubDate: '2020-06-22T19:25:57Z', updaterName: 'my-test-updater.json' },
+    },
+  ])('Action must run successfully with $inputs', async ({ inputs }) => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
       switch (name as ActionInputs) {

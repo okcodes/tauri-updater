@@ -1,4 +1,5 @@
 import { Octokit } from '@octokit/rest'
+import { type GithubAsset } from './github-asset'
 
 export const listGithubReleaseAssets = async ({ githubToken, owner, repo, releaseId }: { githubToken: string; owner: string; repo: string; releaseId: number }): Promise<GithubAsset[]> => {
   try {

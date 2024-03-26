@@ -1,3 +1,5 @@
+import { type GithubAsset } from '../github-utils/github-asset'
+
 type OS = 'darwin' | 'linux' | 'windows'
 type Arch = 'aarch64' | 'armv7' | 'i686' | 'x86_64'
 type InvalidOs_Arch = 'darwin-armv7' | 'darwin-i686' // Excluding 2 os-archs not defined in tauri docs
