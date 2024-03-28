@@ -101,10 +101,10 @@ describe('run', () => {
 
   test.each([
     {
-      inputs: { releaseId: '123', appVersion: '0.0.0', preferUniversal: false, preferNsis: false, pubDate: '2020-06-22T19:25:57Z', updaterName: 'my-test-updater.json' },
+      inputs: { releaseId: '123', appVersion: '0.0.0', preferUniversal: false, preferNsis: false, pubDate: '2020-06-22T19:25:57Z', updaterName: 'my-test-updater.json', updaterUrlTemplate: 'https://example/rewrite/{ASSET_NAME}/123' },
     },
     {
-      inputs: { releaseId: '123', appVersion: '0.0.0', preferUniversal: true, preferNsis: true, pubDate: '2020-06-22T19:25:57Z', updaterName: 'my-test-updater.json' },
+      inputs: { releaseId: '123', appVersion: '0.0.0', preferUniversal: true, preferNsis: true, pubDate: '2020-06-22T19:25:57Z', updaterName: 'my-test-updater.json', updaterUrlTemplate: 'https://example/rewrite/{ASSET_NAME}/123' },
     },
   ])('Action must run successfully with $inputs', async ({ inputs }) => {
     // Set the action's inputs as return values from core.getInput()
@@ -119,6 +119,8 @@ describe('run', () => {
           return inputs.pubDate
         case 'updaterName':
           return inputs.updaterName
+        case 'updaterUrlTemplate':
+          return inputs.updaterUrlTemplate
         default:
           return ''
       }
@@ -152,7 +154,7 @@ describe('run', () => {
     } as AssembleSemiUpdaterParams)
 
     expect(assembleUpdaterFromSemiMock).toHaveBeenCalledTimes(1)
-    expect(assembleUpdaterFromSemiMock).toHaveBeenNthCalledWith(1, { githubToken: THE_GITHUB_TOKEN, semiUpdater: expectedSemiUpdater } as AssembleUpdaterFromSemiParams)
+    expect(assembleUpdaterFromSemiMock).toHaveBeenNthCalledWith(1, { githubToken: THE_GITHUB_TOKEN, semiUpdater: expectedSemiUpdater, updaterUrlTemplate: inputs.updaterUrlTemplate } as AssembleUpdaterFromSemiParams)
 
     expect(uploadTextAsAssetMock).toHaveBeenCalledTimes(1)
     expect(uploadTextAsAssetMock).toHaveBeenNthCalledWith(1, {

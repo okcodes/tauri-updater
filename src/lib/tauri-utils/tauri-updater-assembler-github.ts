@@ -1,5 +1,6 @@
 import { OS_Arch, TauriSemiUpdater } from './tauri-semi-updater-assembler'
 import axios from 'axios'
+import { GithubAsset } from '../github-utils/github-asset'
 
 export type TauriUpdater = {
   version: string
@@ -25,9 +26,10 @@ export type TauriUpdater = {
 export type AssembleUpdaterFromSemiParams = {
   semiUpdater: TauriSemiUpdater
   githubToken: string
+  updaterUrlTemplate: string
 }
 
-export const assembleUpdaterFromSemi = async ({ semiUpdater, githubToken }: AssembleUpdaterFromSemiParams): Promise<TauriUpdater> => {
+export const assembleUpdaterFromSemi = async ({ semiUpdater, githubToken, updaterUrlTemplate }: AssembleUpdaterFromSemiParams): Promise<TauriUpdater> => {
   const updater: TauriUpdater = {
     version: semiUpdater.version,
     platforms: {},
@@ -40,12 +42,17 @@ export const assembleUpdaterFromSemi = async ({ semiUpdater, githubToken }: Asse
     const signatureContent = await getSignatureContent({ url: signatureAsset.url, githubToken })
     if (signatureContent) {
       updater.platforms[osArch as OS_Arch] = {
-        url: updaterAsset.url,
+        url: rewriteUpdaterUrl({ asset: updaterAsset, template: updaterUrlTemplate }),
         signature: signatureContent,
       }
     }
   }
   return updater
+}
+
+const rewriteUpdaterUrl = ({ template, asset }: { template: string; asset: GithubAsset }) => {
+  if (!template) return asset.url
+  return template.replaceAll(/\{ASSET_NAME}/gi, asset.name)
 }
 
 const getSignatureContent = async ({ url, githubToken }: { url: string; githubToken: string }): Promise<string> => {
