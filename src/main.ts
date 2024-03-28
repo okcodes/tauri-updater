@@ -66,9 +66,9 @@ export async function run(): Promise<void> {
 
     const assets = await listGithubReleaseAssets({ githubToken: GITHUB_TOKEN, repo, owner, releaseId })
     const semiUpdater = assembleSemiUpdater({ appVersion, pubDate, assets, preferUniversal, preferNsis })
-    console.log('Semi updater assembled, will assemble final updater', { semiUpdater })
+    console.log('Semi updater assembled, will assemble final updater', semiUpdater)
     const updater = await assembleUpdaterFromSemi({ semiUpdater, githubToken: GITHUB_TOKEN, updaterUrlTemplate })
-    console.log('Final updater assembled, will upload', { updater })
+    console.log('Final updater assembled, will upload', updater)
     await uploadTextAsAsset({ name: updaterName, text: JSON.stringify(updater), releaseId, owner, repo, githubToken: GITHUB_TOKEN })
   } catch (error) {
     // Fail the workflow run if an error occurs
