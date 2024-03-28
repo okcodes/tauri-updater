@@ -46,7 +46,7 @@ export async function run(): Promise<void> {
     const preferNsis = booleanInput('preferNsis', { required: true, trimWhitespace: true })
     const pubDate = input('pubDate', { required: true, trimWhitespace: true })
     const updaterName = path.basename(input('updaterName', { required: true, trimWhitespace: true }))
-    const updaterUrlTemplate = input('updaterUrlTemplate', { required: true, trimWhitespace: true })
+    const updaterUrlTemplate = input('updaterUrlTemplate', { required: false, trimWhitespace: true })
 
     // Validate release ID
     if (isNaN(releaseId)) {
