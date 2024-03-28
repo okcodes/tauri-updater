@@ -44,85 +44,85 @@ jobs:
         id: npm-ci-test
         run: npm run ci-test
 
-  # test-long-tag:
-  #   name: Get Pre-Release Long Tag
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 5
-  #   outputs:
-  #     tag: ${{ steps.get-tag.outputs.tag }}
-  #   steps:
-  #     - id: get-tag
-  #       run: |
-  #         echo "tag={NAME}-v{VERSION}+$(date -u '+%Y.%m.%dT%H.%M.%SZ')-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+  test-long-tag:
+    name: Get Pre-Release Long Tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.get-tag.outputs.tag }}
+    steps:
+      - id: get-tag
+        run: |
+          echo "tag={NAME}-v{VERSION}+$(date -u '+%Y.%m.%dT%H.%M.%SZ')-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
-  # test-build:
-  #   needs: [test-long-tag]
-  #   name: Build ${{ matrix.name }}
-  #   runs-on: ${{ matrix.os }}
-  #   timeout-minutes: 60
-  #   permissions:
-  #     contents: 'write'
-  #   outputs:
-  #     appName: ${{ steps.tauri.outputs.appName }}
-  #     appVersion: ${{ steps.tauri.outputs.appVersion }}
-  #     tag: ${{ steps.tauri.outputs.tag }}
-  #     releaseId: ${{ steps.tauri.outputs.releaseId }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       include:
-  #         - name: Apple Intel
-  #           os: macos-latest
-  #           target: x86_64-apple-darwin
-  #           bundles: app,dmg,updater
-  #           expectedArtifacts: 4 # .app + .dmg + updater + signature
-  #         - name: Windows 64
-  #           os: windows-latest
-  #           target: x86_64-pc-windows-msvc
-  #           bundles: nsis,msi,updater
-  #           expectedArtifacts: 6 # NSIS: (.exe + updater + signature) + MSI (.msi + updater + signature)
-  #   steps:
-  #     - name: Install pnpm
-  #       run: npm i -g pnpm
+  test-build:
+    needs: [test-long-tag]
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    permissions:
+      contents: 'write'
+    outputs:
+      appName: ${{ steps.tauri.outputs.appName }}
+      appVersion: ${{ steps.tauri.outputs.appVersion }}
+      tag: ${{ steps.tauri.outputs.tag }}
+      releaseId: ${{ steps.tauri.outputs.releaseId }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Apple Intel
+            os: macos-latest
+            target: x86_64-apple-darwin
+            bundles: app,dmg,updater
+            expectedArtifacts: 4 # .app + .dmg + updater + signature
+          - name: Windows 64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: nsis,msi,updater
+            expectedArtifacts: 6 # NSIS: (.exe + updater + signature) + MSI (.msi + updater + signature)
+    steps:
+      - name: Install pnpm
+        run: npm i -g pnpm
 
-  #     # Checkout this repo
-  #     - uses: actions/checkout@v4
+      # Checkout this repo
+      - uses: actions/checkout@v4
 
-  #     # Checkout demo app repo
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         repository: 'okcodes/tauri-v1-micro-demo'
-  #         path: 'micro-demo'
-  #         ref: 'main'
+      # Checkout demo app repo
+      - uses: actions/checkout@v4
+        with:
+          repository: 'okcodes/tauri-v1-micro-demo'
+          path: 'micro-demo'
+          ref: 'main'
 
-  #     - uses: okcodes/tauri-build@main
-  #       id: tauri
-  #       with:
-  #         tauriContext: ${{ github.workspace }}/micro-demo/
-  #         tagTemplate: ${{ needs.test-long-tag.outputs.tag }}
-  #         draft: true
-  #         prerelease: true
-  #         buildOptions: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --verbose
-  #         expectedArtifacts: ${{ matrix.expectedArtifacts }}
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #         # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-  #         # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-  #         # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-  #         # APPLE_ID: ${{ secrets.APPLE_ID }}
-  #         # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-  #         # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-  #         TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-  #         TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+      - uses: okcodes/tauri-build@main
+        id: tauri
+        with:
+          tauriContext: ${{ github.workspace }}/micro-demo/
+          tagTemplate: ${{ needs.test-long-tag.outputs.tag }}
+          draft: true
+          prerelease: true
+          buildOptions: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --verbose
+          expectedArtifacts: ${{ matrix.expectedArtifacts }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
 
-  #     - run: |
-  #         echo "App Name ${{ steps.tauri.outputs.appName }}"
-  #         echo "App Version ${{ steps.tauri.outputs.appVersion }}"
-  #         echo "Tag ${{ steps.tauri.outputs.tag }}"
-  #         echo "Release ID ${{ steps.tauri.outputs.releaseId }}"
+      - run: |
+          echo "App Name ${{ steps.tauri.outputs.appName }}"
+          echo "App Version ${{ steps.tauri.outputs.appVersion }}"
+          echo "Tag ${{ steps.tauri.outputs.tag }}"
+          echo "Release ID ${{ steps.tauri.outputs.releaseId }}"
 
   test-updater:
-    # needs: test-build
+    needs: test-build
     name: Assemble Updater
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -133,15 +133,12 @@ jobs:
 
       - uses: ./
         with:
-          # appVersion: ${{needs.test-build.outputs.appVersion}}
-          appVersion: 0.0.0
+          appVersion: ${{needs.test-build.outputs.appVersion}}
           preferNsis: true
           preferUniversal: true
           pubDate: '2024-03-24T00:11:22Z'
-          # releaseId: ${{ needs.test-build.outputs.releaseId }}
-          releaseId: 148785329
-          # updaterName: ${{ needs.test-build.outputs.appName }}-updater.json
-          updaterName: micro-demo-updater.json
-          # updaterUrlTemplate: ''
+          releaseId: ${{ needs.test-build.outputs.releaseId }}
+          updaterName: ${{ needs.test-build.outputs.appName }}-updater.json
+          updaterUrlTemplate: 'https://bucket-name.s3.amazonaws.com/your/path/{ASSET_NAME}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
