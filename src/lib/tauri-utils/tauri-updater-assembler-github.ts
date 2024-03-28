@@ -57,7 +57,7 @@ const rewriteUpdaterUrl = ({ template, asset }: { template: string; asset: Githu
   return template.replaceAll(REWRITE_UPDATER_URL_REGEX(), asset.name)
 }
 
-const getSignatureContent = async ({ url, githubToken }: { url: string; githubToken: string }): Promise<string> => {
+export const getSignatureContent = async ({ url, githubToken }: { url: string; githubToken: string }): Promise<string> => {
   const response = await axios({
     method: 'get',
     url,
