@@ -170,4 +170,73 @@ describe('run', () => {
     expect(setFailedMock).not.toHaveBeenCalled()
     expect(errorMock).not.toHaveBeenCalled()
   })
+
+  type TestInputs = Record<ActionInputs, string>
+
+  type FailureTestCase = {
+    inputs: TestInputs
+    expectedFailure: unknown
+  }
+
+  const failureTestCases: FailureTestCase[] = [
+    {
+      inputs: {
+        releaseId: '1',
+        updaterUrlTemplate: '',
+        appVersion: '1',
+        preferNsis: 'false',
+        pubDate: '2020-06-22T19:25:57Z',
+        preferUniversal: 'false',
+        updaterName: '', // Empty updater name not allowed.
+      },
+      expectedFailure: 'The input "updaterName" must be a valid file name with the .json extension.',
+    },
+    {
+      inputs: {
+        releaseId: '1',
+        updaterUrlTemplate: '',
+        appVersion: '1',
+        preferNsis: 'false',
+        pubDate: '2020-06-22T19:25:57Z',
+        preferUniversal: 'false',
+        updaterName: 'my-updater.txt', // Updater name must end with .json.
+      },
+      expectedFailure: 'The input "updaterName" must be a valid file name with the .json extension.',
+    },
+    {
+      inputs: {
+        releaseId: '1',
+        updaterUrlTemplate: 'https://example.com/my-updater-url', // When template does not contain {ASSET_NAME} it must fail.
+        appVersion: '1',
+        preferNsis: 'false',
+        pubDate: '2020-06-22T19:25:57Z',
+        preferUniversal: 'false',
+        updaterName: 'my-updater.json',
+      },
+      expectedFailure: 'If using the "updaterUrlTemplate" it must include the "{ASSET_NAME}" placeholder.',
+    },
+  ]
+
+  test.each(failureTestCases)('Called with invalid inputs $inputs must show correct error message', async ({ inputs, expectedFailure }) => {
+    // Set the action's inputs as return values from core.getInput()
+    getInputMock.mockImplementation(name => inputs[name as keyof TestInputs])
+
+    setAllValidRequiredEnvVars()
+    await main.run()
+    expect(runMock).toHaveReturned()
+
+    // Business logic function not called
+    expect(listGithubReleaseAssetsMock).not.toHaveBeenCalled()
+    expect(assembleUpdaterFromSemiMock).not.toHaveBeenCalled()
+    expect(uploadTextAsAssetMock).not.toHaveBeenCalled()
+    expect(assembleSemiUpdaterMock).not.toHaveBeenCalled()
+
+    // Verify correct error was shown
+    expect(setFailedMock).toHaveBeenCalledTimes(1)
+    expect(setFailedMock).toHaveBeenNthCalledWith(1, expectedFailure)
+
+    // Verify that core library functions were called correctly
+    expect(errorMock).not.toHaveBeenCalled()
+    expect(setOutputMock).not.toHaveBeenCalled()
+  })
 })

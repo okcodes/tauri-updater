@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import { assembleSemiUpdater } from './lib/tauri-utils/tauri-semi-updater-assembler'
 import { listGithubReleaseAssets } from './lib/github-utils/list-github-release-assets'
 import { getRequiredEnvVars } from './lib/github-utils/github-env-vars'
-import { assembleUpdaterFromSemi } from './lib/tauri-utils/tauri-updater-assembler-github'
+import { assembleUpdaterFromSemi, REWRITE_UPDATER_URL_REGEX } from './lib/tauri-utils/tauri-updater-assembler-github'
 import { uploadTextAsAsset } from './lib/github-utils/github-upload'
 import path from 'path'
 import { VERSION } from './version'
@@ -56,6 +56,11 @@ export async function run(): Promise<void> {
 
     if (!updaterName.endsWith('.json') || !path.basename(updaterName, '.json')) {
       core.setFailed('The input "updaterName" must be a valid file name with the .json extension.')
+      return
+    }
+
+    if (updaterUrlTemplate && !REWRITE_UPDATER_URL_REGEX.test(updaterUrlTemplate)) {
+      core.setFailed('If using the "updaterUrlTemplate" it must include the "{ASSET_NAME}" placeholder.')
       return
     }
 

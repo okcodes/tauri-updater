@@ -50,9 +50,11 @@ export const assembleUpdaterFromSemi = async ({ semiUpdater, githubToken, update
   return updater
 }
 
+export const REWRITE_UPDATER_URL_REGEX = /\{ASSET_NAME}/gi
+
 const rewriteUpdaterUrl = ({ template, asset }: { template: string; asset: GithubAsset }) => {
   if (!template) return asset.url
-  return template.replaceAll(/\{ASSET_NAME}/gi, asset.name)
+  return template.replaceAll(REWRITE_UPDATER_URL_REGEX, asset.name)
 }
 
 const getSignatureContent = async ({ url, githubToken }: { url: string; githubToken: string }): Promise<string> => {
