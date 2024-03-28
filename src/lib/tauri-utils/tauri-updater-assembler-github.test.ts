@@ -1,4 +1,3 @@
-import { type TauriSemiUpdater } from './tauri-semi-updater-assembler'
 import { assembleUpdaterFromSemi, type AssembleUpdaterFromSemiParams, type TauriUpdater } from './tauri-updater-assembler-github'
 import * as tauriUpdaterAssemblerGithubModule from './tauri-updater-assembler-github'
 
@@ -93,5 +92,9 @@ describe('assembleUpdaterFromSemi', () => {
   test.each(successTestCases)('Must produce correct updater', async ({ inputs, expected }) => {
     const updater = await assembleUpdaterFromSemi(inputs)
     expect(updater).toEqual(expected)
+    expect(getSignatureContentMock).toHaveBeenCalledTimes(Object.keys(inputs.semiUpdater.platformsPlaceholder).length)
+    Object.values(inputs.semiUpdater.platformsPlaceholder).forEach((x, i) => {
+      expect(getSignatureContentMock).toHaveBeenNthCalledWith(i + 1, { url: x.signature.url, githubToken: '' })
+    })
   })
 })
