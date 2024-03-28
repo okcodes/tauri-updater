@@ -29,7 +29,6 @@ inputs:
   updaterUrlTemplate:
     description: 'If provided, it will be used to rewrite the "updater bundle" URL. It will interpolate the string "{ASSET_NAME}" with the GitHub release asset name of the updater bundle.'
     required: false
-    default: ''
 
 runs:
   using: node20
