@@ -59,7 +59,7 @@ export async function run(): Promise<void> {
       return
     }
 
-    if (updaterUrlTemplate && !REWRITE_UPDATER_URL_REGEX.test(updaterUrlTemplate)) {
+    if (updaterUrlTemplate && !REWRITE_UPDATER_URL_REGEX().test(updaterUrlTemplate)) {
       core.setFailed('If using the "updaterUrlTemplate" it must include the "{ASSET_NAME}" placeholder.')
       return
     }
