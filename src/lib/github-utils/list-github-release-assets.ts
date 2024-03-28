@@ -3,7 +3,7 @@ import { type GithubAsset } from './github-asset'
 
 export const listGithubReleaseAssets = async ({ githubToken, owner, repo, releaseId }: { githubToken: string; owner: string; repo: string; releaseId: number }): Promise<GithubAsset[]> => {
   try {
-    // TODO: Enable substituting the URL in the updater so we can use our S3 URL. Don't make this action dependent on S3, so just a URL_TEMPLATE will do it.
+    console.log('Will list assets of release', { owner, repo, releaseId })
     const octokit = new Octokit({ auth: githubToken })
     let assets: GithubAsset[] = []
     let page = 1
@@ -16,6 +16,7 @@ export const listGithubReleaseAssets = async ({ githubToken, owner, repo, releas
         page++
       }
     }
+    console.log(`Did list assets in ${page} pages`, assets)
     return assets
   } catch (error) {
     console.error('Unexpected error listing release assets', { owner, repo, releaseId, error })
