@@ -142,5 +142,6 @@ jobs:
           releaseId: 148785329
           # updaterName: ${{ needs.test-build.outputs.appName }}-updater.json
           updaterName: micro-demo-updater.json
+          updaterUrlTemplate: ''
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
