@@ -47,7 +47,7 @@ jobs:
   test-long-tag:
     name: Get Pre-Release Long Tag
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 5
     outputs:
       tag: ${{ steps.get-tag.outputs.tag }}
     steps:
@@ -59,7 +59,7 @@ jobs:
     needs: [test-long-tag]
     name: Build ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 60
     permissions:
       contents: 'write'
     outputs:
@@ -125,7 +125,7 @@ jobs:
     needs: test-build
     name: Assemble Updater
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
     permissions:
       contents: 'write'
     outputs:
