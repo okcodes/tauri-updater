@@ -47,7 +47,7 @@ jobs:
   test-long-tag:
     name: Get Pre-Release Long Tag
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 5
     outputs:
       tag: ${{ steps.get-tag.outputs.tag }}
     steps:
@@ -59,7 +59,7 @@ jobs:
     needs: [test-long-tag]
     name: Build ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 60
     permissions:
       contents: 'write'
     outputs:
@@ -125,14 +125,9 @@ jobs:
     needs: test-build
     name: Assemble Updater
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
     permissions:
       contents: 'write'
-    outputs:
-      appName: ${{ needs.test-build.outputs.appName }}
-      appVersion: ${{ needs.test-build.outputs.appVersion }}
-      tag: ${{ needs.test-build.outputs.tag }}
-      releaseId: ${{ needs.test-build.outputs.releaseId }}
     steps:
       - uses: actions/checkout@v4
 
@@ -144,5 +139,6 @@ jobs:
           pubDate: '2024-03-24T00:11:22Z'
           releaseId: ${{ needs.test-build.outputs.releaseId }}
           updaterName: ${{ needs.test-build.outputs.appName }}-updater.json
+          updaterUrlTemplate: 'https://bucket-name.s3.amazonaws.com/your/path/{ASSET_NAME}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

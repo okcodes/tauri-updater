@@ -2,12 +2,12 @@ import * as core from '@actions/core'
 import { assembleSemiUpdater } from './lib/tauri-utils/tauri-semi-updater-assembler'
 import { listGithubReleaseAssets } from './lib/github-utils/list-github-release-assets'
 import { getRequiredEnvVars } from './lib/github-utils/github-env-vars'
-import { assembleUpdaterFromSemi } from './lib/tauri-utils/tauri-updater-assembler-github'
+import { assembleUpdaterFromSemi, REWRITE_UPDATER_URL_REGEX } from './lib/tauri-utils/tauri-updater-assembler-github'
 import { uploadTextAsAsset } from './lib/github-utils/github-upload'
 import path from 'path'
 import { VERSION } from './version'
 
-export type ActionInputs = 'releaseId' | 'appVersion' | 'preferUniversal' | 'preferNsis' | 'pubDate' | 'updaterName'
+export type ActionInputs = 'releaseId' | 'appVersion' | 'preferUniversal' | 'preferNsis' | 'pubDate' | 'updaterName' | 'updaterUrlTemplate'
 
 const input = (name: ActionInputs, options: core.InputOptions): string => core.getInput(name, options)
 const booleanInput = (name: ActionInputs, options: core.InputOptions): boolean => core.getBooleanInput(name, options)
@@ -46,6 +46,7 @@ export async function run(): Promise<void> {
     const preferNsis = booleanInput('preferNsis', { required: true, trimWhitespace: true })
     const pubDate = input('pubDate', { required: true, trimWhitespace: true })
     const updaterName = path.basename(input('updaterName', { required: true, trimWhitespace: true }))
+    const updaterUrlTemplate = input('updaterUrlTemplate', { required: false, trimWhitespace: true })
 
     // Validate release ID
     if (isNaN(releaseId)) {
@@ -58,11 +59,17 @@ export async function run(): Promise<void> {
       return
     }
 
+    if (updaterUrlTemplate && !REWRITE_UPDATER_URL_REGEX().test(updaterUrlTemplate)) {
+      core.setFailed('If using the "updaterUrlTemplate" it must include the "{ASSET_NAME}" placeholder.')
+      return
+    }
+
     const assets = await listGithubReleaseAssets({ githubToken: GITHUB_TOKEN, repo, owner, releaseId })
     const semiUpdater = assembleSemiUpdater({ appVersion, pubDate, assets, preferUniversal, preferNsis })
-    const updater = await assembleUpdaterFromSemi({ semiUpdater, githubToken: GITHUB_TOKEN })
+    console.log('Semi updater assembled, will assemble final updater', { semiUpdater })
+    const updater = await assembleUpdaterFromSemi({ semiUpdater, githubToken: GITHUB_TOKEN, updaterUrlTemplate })
+    console.log('Final updater assembled, will upload', { updater })
     await uploadTextAsAsset({ name: updaterName, text: JSON.stringify(updater), releaseId, owner, repo, githubToken: GITHUB_TOKEN })
-    console.log('Semi updater assembled, will assemble final updater', { semiUpdater, updater })
   } catch (error) {
     // Fail the workflow run if an error occurs
     console.error('Error assembling updater', error)

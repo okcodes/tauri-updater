@@ -8,5 +8,15 @@ GitHub action that:
 ## Example Usage
 
 ```yaml
-# TODO: Put example usage
+- uses: okcodes/tauri-updater@v0
+  with:
+    appVersion: '0.0.0'
+    preferNsis: true
+    preferUniversal: true
+    pubDate: '2024-03-24T00:11:22Z'
+    releaseId: '123'
+    updaterName: app-updater.json
+    updaterUrlTemplate: 'https://bucket-name.s3.amazonaws.com/your/path/{ASSET_NAME}'
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```

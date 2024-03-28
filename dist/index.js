@@ -32576,9 +32576,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.assembleUpdaterFromSemi = void 0;
+exports.getSignatureContent = exports.REWRITE_UPDATER_URL_REGEX = exports.assembleUpdaterFromSemi = void 0;
 const axios_1 = __importDefault(__nccwpck_require__(8757));
-const assembleUpdaterFromSemi = async ({ semiUpdater, githubToken }) => {
+const assembleUpdaterFromSemi = async ({ semiUpdater, githubToken, updaterUrlTemplate }) => {
     const updater = {
         version: semiUpdater.version,
         platforms: {},
@@ -32587,10 +32587,10 @@ const assembleUpdaterFromSemi = async ({ semiUpdater, githubToken }) => {
     };
     for (const osArch in semiUpdater.platformsPlaceholder) {
         const { updater: updaterAsset, signature: signatureAsset } = semiUpdater.platformsPlaceholder[osArch];
-        const signatureContent = await getSignatureContent({ url: signatureAsset.url, githubToken });
+        const signatureContent = await (0, exports.getSignatureContent)({ url: signatureAsset.url, githubToken });
         if (signatureContent) {
             updater.platforms[osArch] = {
-                url: updaterAsset.url,
+                url: rewriteUpdaterUrl({ asset: updaterAsset, template: updaterUrlTemplate }),
                 signature: signatureContent,
             };
         }
@@ -32598,6 +32598,13 @@ const assembleUpdaterFromSemi = async ({ semiUpdater, githubToken }) => {
     return updater;
 };
 exports.assembleUpdaterFromSemi = assembleUpdaterFromSemi;
+const REWRITE_UPDATER_URL_REGEX = () => /\{ASSET_NAME}/gi;
+exports.REWRITE_UPDATER_URL_REGEX = REWRITE_UPDATER_URL_REGEX;
+const rewriteUpdaterUrl = ({ template, asset }) => {
+    if (!template)
+        return asset.url;
+    return template.replaceAll((0, exports.REWRITE_UPDATER_URL_REGEX)(), asset.name);
+};
 const getSignatureContent = async ({ url, githubToken }) => {
     const response = await (0, axios_1.default)({
         method: 'get',
@@ -32610,6 +32617,7 @@ const getSignatureContent = async ({ url, githubToken }) => {
     });
     return response.data;
 };
+exports.getSignatureContent = getSignatureContent;
 
 
 /***/ }),
@@ -32685,6 +32693,7 @@ async function run() {
         const preferNsis = booleanInput('preferNsis', { required: true, trimWhitespace: true });
         const pubDate = input('pubDate', { required: true, trimWhitespace: true });
         const updaterName = path_1.default.basename(input('updaterName', { required: true, trimWhitespace: true }));
+        const updaterUrlTemplate = input('updaterUrlTemplate', { required: false, trimWhitespace: true });
         // Validate release ID
         if (isNaN(releaseId)) {
             core.setFailed('The input "releaseId" must be a number.');
@@ -32694,11 +32703,16 @@ async function run() {
             core.setFailed('The input "updaterName" must be a valid file name with the .json extension.');
             return;
         }
+        if (updaterUrlTemplate && !(0, tauri_updater_assembler_github_1.REWRITE_UPDATER_URL_REGEX)().test(updaterUrlTemplate)) {
+            core.setFailed('If using the "updaterUrlTemplate" it must include the "{ASSET_NAME}" placeholder.');
+            return;
+        }
         const assets = await (0, list_github_release_assets_1.listGithubReleaseAssets)({ githubToken: GITHUB_TOKEN, repo, owner, releaseId });
         const semiUpdater = (0, tauri_semi_updater_assembler_1.assembleSemiUpdater)({ appVersion, pubDate, assets, preferUniversal, preferNsis });
-        const updater = await (0, tauri_updater_assembler_github_1.assembleUpdaterFromSemi)({ semiUpdater, githubToken: GITHUB_TOKEN });
+        console.log('Semi updater assembled, will assemble final updater', { semiUpdater });
+        const updater = await (0, tauri_updater_assembler_github_1.assembleUpdaterFromSemi)({ semiUpdater, githubToken: GITHUB_TOKEN, updaterUrlTemplate });
+        console.log('Final updater assembled, will upload', { updater });
         await (0, github_upload_1.uploadTextAsAsset)({ name: updaterName, text: JSON.stringify(updater), releaseId, owner, repo, githubToken: GITHUB_TOKEN });
-        console.log('Semi updater assembled, will assemble final updater', { semiUpdater, updater });
     }
     catch (error) {
         // Fail the workflow run if an error occurs
