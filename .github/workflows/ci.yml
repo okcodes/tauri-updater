@@ -128,11 +128,6 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: 'write'
-    outputs:
-      appName: ${{ needs.test-build.outputs.appName }}
-      appVersion: ${{ needs.test-build.outputs.appVersion }}
-      tag: ${{ needs.test-build.outputs.tag }}
-      releaseId: ${{ needs.test-build.outputs.releaseId }}
     steps:
       - uses: actions/checkout@v4
 
