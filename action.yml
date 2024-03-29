@@ -8,6 +8,8 @@ branding:
 
 inputs:
   releaseId:
+    # Dev note: Don't support getting the release by tag name. The mechanism GitHub has for getting a release by its ID is very unreliable when working with draft releases, and often you end up with duplicated draft releases with the same
+    # tag, and it will produce inconsistent releases where some assets are uploaded to different releases.
     description: 'ID of the release to inspect to assemble the app updater.'
     required: true
   appVersion:
