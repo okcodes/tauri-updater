@@ -32439,7 +32439,7 @@ exports.listGithubReleaseAssets = void 0;
 const rest_1 = __nccwpck_require__(5375);
 const listGithubReleaseAssets = async ({ githubToken, owner, repo, releaseId }) => {
     try {
-        // TODO: Enable substituting the URL in the updater so we can use our S3 URL. Don't make this action dependent on S3, so just a URL_TEMPLATE will do it.
+        console.log('Will list assets of release', { owner, repo, releaseId });
         const octokit = new rest_1.Octokit({ auth: githubToken });
         let assets = [];
         let page = 1;
@@ -32452,6 +32452,7 @@ const listGithubReleaseAssets = async ({ githubToken, owner, repo, releaseId }) 
                 page++;
             }
         }
+        console.log(`Did list assets in ${page} pages`, assets);
         return assets;
     }
     catch (error) {
@@ -32709,9 +32710,9 @@ async function run() {
         }
         const assets = await (0, list_github_release_assets_1.listGithubReleaseAssets)({ githubToken: GITHUB_TOKEN, repo, owner, releaseId });
         const semiUpdater = (0, tauri_semi_updater_assembler_1.assembleSemiUpdater)({ appVersion, pubDate, assets, preferUniversal, preferNsis });
-        console.log('Semi updater assembled, will assemble final updater', { semiUpdater });
+        console.log('Semi updater assembled, will assemble final updater', semiUpdater);
         const updater = await (0, tauri_updater_assembler_github_1.assembleUpdaterFromSemi)({ semiUpdater, githubToken: GITHUB_TOKEN, updaterUrlTemplate });
-        console.log('Final updater assembled, will upload', { updater });
+        console.log('Final updater assembled, will upload', updater);
         await (0, github_upload_1.uploadTextAsAsset)({ name: updaterName, text: JSON.stringify(updater), releaseId, owner, repo, githubToken: GITHUB_TOKEN });
     }
     catch (error) {
